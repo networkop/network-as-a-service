@@ -7,4 +7,4 @@ High-level architecture
 
 ## Demos
 
-* [Part 1](https://github.com/networkop/naas/tree/part-1)
+* [Part 1](https://github.com/networkop/network-as-a-service/tree/part-1)

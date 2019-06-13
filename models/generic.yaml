@@ -1,0 +1,5 @@
+---
+checkme_service: api.naas
+alias:
+  key: FOO
+  command: BAR

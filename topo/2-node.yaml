@@ -1,0 +1,29 @@
+VERSION: 2
+CEOS_IMAGE: ceos:4.21.5F
+PUBLISH_BASE: 9000
+driver: veth
+links:
+        - endpoints:
+            - "veos-1:eth0" 
+            - "veos-2:eth0"
+          driver: bridge
+        - endpoints: ["veos-1:eth1", "veos-2:eth1"]
+        - endpoints: ["veos-1:eth2", "veos-2:eth2"]
+        - endpoints: ["veos-1:eth3", "veos-2:eth3"]
+        - endpoints: ["veos-1:eth4", "veos-2:eth4"]
+        - endpoints: ["veos-1:eth5", "veos-2:eth5"]
+        - endpoints: ["veos-1:eth6", "veos-2:eth6"]
+        - endpoints: ["veos-1:eth7", "veos-2:eth7"]
+        - endpoints: ["veos-1:eth8", "veos-2:eth8"]
+        - endpoints: ["veos-1:eth9", "veos-2:eth9"]
+        - endpoints: ["veos-1:eth10", "veos-2:eth10"]
+        - endpoints: ["veos-1:eth11", "veos-2:eth11"]
+        - endpoints: ["veos-1:eth12", "veos-2:eth12"]
+        - endpoints: ["veos-1:eth13", "veos-2:eth13"]
+        - endpoints: ["veos-1:eth14", "veos-2:eth14"]
+        - endpoints: ["veos-1:eth15", "veos-2:eth15"]
+        - endpoints: ["veos-1:eth16", "veos-2:eth16"]
+        - endpoints: ["veos-1:eth17", "veos-2:eth17"]
+        - endpoints: ["veos-1:eth18", "veos-2:eth18"]
+        - endpoints: ["veos-1:eth19", "veos-2:eth19"]
+        

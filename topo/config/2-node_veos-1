@@ -1,0 +1,26 @@
+!
+hostname sw-1
+!
+ip host api.naas 172.17.0.3
+!
+spanning-tree mode mstp
+!
+aaa authorization exec default local
+!
+no aaa root
+!
+username admin privilege 15 role network-admin secret sha512 $6$/s5n0FAtxRVisDzL$pj4hJ./pY/NuvTj1WV7e/QO60VwMO4ilB3MzwlCJtA0bcsT9DyVZO/S0/tv6MpqfEwU9Q0kkbUta0OhSITPqE0
+!
+interface Ethernet1
+!
+management api http-commands
+   no shutdown
+!
+interface Management1
+   ip address 10.0.0.15/24
+   no shutdown
+   exit
+!
+ip route 0.0.0.0/0 10.0.0.2
+!
+end

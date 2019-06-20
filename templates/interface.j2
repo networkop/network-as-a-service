@@ -2,7 +2,9 @@
 !
 interface Ethernet{{ intf }}
   description {{ data.annotations.owner }}
+{% if data.stp is defined %}
   spanning-tree {{ data.stp }}
+{% endif %}
 {% if data.trunk %}
   switchport mode trunk
   switchport trunk allowed vlan {{ data.vlan }}
@@ -10,7 +12,7 @@ interface Ethernet{{ intf }}
   switchport mode access
   switchport access vlan {{ data.vlan }}
 {% endif %}
-{% if data.shutdown %}
+{% if data.shutdown is defined %}
   shutdown
 {% else %}
   no shutdown

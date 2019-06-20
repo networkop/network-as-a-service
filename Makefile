@@ -7,6 +7,7 @@ include .mk/kind.mk
 include .mk/docker.mk
 include .mk/enforcer.mk
 include .mk/scheduler.mk
+include .mk/watcher.mk
 
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 PHONY: help
@@ -28,8 +29,8 @@ topo: ## Build test network topology
 topo-stop: ## Destroy test network topology
 	-docker-topo --destroy $(TOPOLOGY)
 
-build: scheduler-build ## Build project
+build: scheduler-build watcher-build ## Build project
 	black ./
 
-clean: scheduler-clean ## Clean project
+clean: scheduler-clean watcher-clean ## Clean project
 	-@kubectl delete --force --grace-period=0 -f test.yaml

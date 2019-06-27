@@ -1,0 +1,24 @@
+---
+apiVersion: kind.sigs.k8s.io/v1alpha3
+kind: Cluster
+kubernetesVersion: 1.13.4
+networking:
+  apiServerAddress: '0.0.0.0'
+  apiServerPort: 6443
+nodes:
+- role: control-plane
+- role: worker
+kubeadmConfigPatches:
+- |
+  apiVersion: kubeadm.k8s.io/v1beta1
+  kind: ClusterConfiguration
+  metadata:
+    name: config
+  apiServer:
+    extraArgs:
+      enable-admission-plugins: NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,Priority,ResourceQuota
+      oidc-issuer-url: https://accounts.google.com
+      oidc-client-id: 855263110485-fkbg6eilidfjaif8dok8m6svmk4dnp91.apps.googleusercontent.com
+      oidc-username-claim: email
+      feature-gates: TTLAfterFinished=true
+

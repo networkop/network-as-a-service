@@ -1,0 +1,40 @@
+---
+kind: ValidatingWebhookConfiguration
+apiVersion: admissionregistration.k8s.io/v1beta1
+metadata:
+  name: validating-webhook
+webhooks:
+  - name: opa.validating.webhook
+    namespaceSelector:
+      matchLabels:
+        validate: "true"
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["network.as.a.service"]
+        apiVersions: ["*"]
+        resources: ["interfaces"]
+    clientConfig:
+      caBundle: ${CA_BUNDLE}
+      service:
+        namespace: opa
+        name: validate
+---
+kind: MutatingWebhookConfiguration
+apiVersion: admissionregistration.k8s.io/v1beta1
+metadata:
+  name: mutating-webhook
+webhooks:
+  - name: http.mutating.webhook
+    namespaceSelector:
+      matchLabels:
+        mutate: "true"
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["network.as.a.service"]
+        apiVersions: ["*"]
+        resources: ["interfaces"]
+    clientConfig:
+      caBundle: ${CA_BUNDLE}
+      service:
+        namespace: mutate
+        name: mutate

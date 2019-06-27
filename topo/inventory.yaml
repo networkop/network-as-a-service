@@ -1,0 +1,14 @@
+---
+devicea:
+  hostname: 172.17.0.1
+  port: 9000
+  username: admin
+  password: admin
+  platform: eos
+
+deviceb:
+  hostname: 172.17.0.1
+  port: 9001
+  username: admin
+  password: admin
+  platform: eos

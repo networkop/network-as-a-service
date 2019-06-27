@@ -1,0 +1,117 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: naas-watcher-clusterrole
+rules:
+- apiGroups:
+  - network.as.a.service
+  resources:
+  - interfaces
+  - devices
+  verbs:
+  - '*'
+- apiGroups:
+  - network.as.a.service
+  resources:
+  - interfaces/status
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - '*'
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: naas-watcher
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: naas-watcher-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: naas-watcher-clusterrole
+subjects:
+- kind: ServiceAccount
+  name: naas-watcher
+  namespace: default
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: naas
+  name: interface-watcher
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      type: interface-watcher
+  template:
+    metadata:
+      labels:
+        app: naas
+        type: interface-watcher
+    spec:
+      serviceAccountName: naas-watcher
+      containers:
+      - image: networkop/naas
+        imagePullPolicy: IfNotPresent
+        name: interface-watcher
+        command: ["/app/interface-watcher.py"]
+        volumeMounts:
+            - name: script
+              mountPath: /app
+              readOnly: true
+      volumes:
+        - name: script
+          configMap:
+            name: interface-watcher-cm
+            defaultMode: 0755
+            items:
+              - key: script
+                path: interface-watcher.py
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: naas
+  name: device-watcher
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      type: device-watcher
+  template:
+    metadata:
+      labels:
+        app: naas
+        type: device-watcher
+    spec:
+      serviceAccountName: naas-watcher
+      containers:
+      - image: networkop/naas
+        imagePullPolicy: IfNotPresent
+        name: device-watcher
+        command: ["/app/device-watcher.py"]
+        volumeMounts:
+            - name: script
+              mountPath: /app
+              readOnly: true
+      volumes:
+        - name: script
+          configMap:
+            name: device-watcher-cm
+            defaultMode: 0755
+            items:
+              - key: script
+                path: device-watcher.py

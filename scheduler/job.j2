@@ -1,0 +1,54 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: naas
+  name: {{ job.name }}
+spec:
+  template:
+    spec:
+      ttlSecondsAfterFinished: 600
+      restartPolicy: OnFailure
+      serviceAccountName: scheduler
+      initContainers:
+      - name: inventory
+        image: networkop/naas
+        command: ['/app/enforcer_init.py']
+        env:
+        - name: INVENTORY
+          value: {{ job.inventory }}
+        volumeMounts:
+        - name: init-script
+          mountPath: /app
+          readOnly: true
+        - name: inventory
+          mountPath: /etc/nornir
+      containers:
+        - name: enforcer
+          image: networkop/naas
+          ports:
+            - containerPort: 80
+          command: [/app/enforcer.py]
+          volumeMounts:
+            - name: main-script
+              mountPath: /app
+              readOnly: true
+            - name: inventory
+              mountPath: /etc/nornir
+      volumes:
+        - name: main-script
+          configMap:
+            name: enforcer-cm
+            defaultMode: 0755
+            items:
+              - key: script
+                path: enforcer.py
+        - name: init-script
+          configMap:
+            name: enforcer-init-cm
+            defaultMode: 0755
+            items:
+              - key: script
+                path: enforcer_init.py
+        - name: inventory
+          emptyDir: {}

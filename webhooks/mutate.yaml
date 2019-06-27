@@ -1,0 +1,93 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cm-reader-mutate
+  namespace: mutate
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cm-reader-clusterrole
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - 'get'
+  - 'list'
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cm-reader-mutate-clusterrolebinding
+roleRef:
+  kind: ClusterRole
+  name: cm-reader-clusterrole
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: cm-reader-mutate
+  namespace: mutate
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: mutate
+  namespace: mutate
+spec:
+  selector:
+    type: mutate-webhook
+  ports:
+  - name: https
+    protocol: TCP
+    port: 443
+    targetPort: 443
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: naas
+    type: mutate-webhook
+  namespace: mutate
+  name: mutate-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      type: mutate-webhook
+  template:
+    metadata:
+      labels:
+        app: naas
+        type: mutate-webhook
+      name: mutate-webhook
+    spec:
+      serviceAccountName: cm-reader-mutate
+      containers:
+        - name: mutate-webhook
+          image: networkop/naas:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 443
+          command: [/app/mutate.py]
+          volumeMounts:
+            - readOnly: true
+              mountPath: /certs
+              name: mutate-secret
+            - name: script
+              mountPath: /app
+              readOnly: true
+      volumes:
+        - name: mutate-secret
+          secret:
+            secretName: mutate-secret
+        - name: script
+          configMap:
+            name: mutate-webhook-cm
+            defaultMode: 0755
+            items:
+              - key: script
+                path: mutate.py

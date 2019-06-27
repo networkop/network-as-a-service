@@ -1,0 +1,21 @@
+{% for intf, data in model.items() -%}
+!
+interface Ethernet{{ intf }}
+  description {{ data.annotations.owner }}
+{% if data.stp is defined %}
+  spanning-tree {{ data.stp }}
+{% endif %}
+{% if data.trunk %}
+  switchport mode trunk
+  switchport trunk allowed vlan {{ data.vlan }}
+{% else %}
+  switchport mode access
+  switchport access vlan {{ data.vlan }}
+{% endif %}
+{% if data.shutdown is defined %}
+  shutdown
+{% else %}
+  no shutdown
+{% endif %}
+  exit
+{% endfor %}

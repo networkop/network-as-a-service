@@ -35,7 +35,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
-    app: enforcer
+    app: naas
   namespace: default
   name: enforcer
 spec:

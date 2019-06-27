@@ -7,14 +7,16 @@ include .mk/kind.mk
 include .mk/docker.mk
 include .mk/enforcer.mk
 include .mk/scheduler.mk
+include .mk/webhooks.mk
 include .mk/watcher.mk
+include .mk/oidc.mk
 
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 PHONY: help
 help: ## Print help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-.PHONY: build kubernetes kubernetes-stop clean topo warmup
+.PHONY: build kubernetes kubernetes-stop clean topo warmup logs
 
 kubernetes: kind-start ## Create local k8s cluster
 
@@ -29,8 +31,11 @@ topo: ## Build test network topology
 topo-stop: ## Destroy test network topology
 	-docker-topo --destroy $(TOPOLOGY)
 
-build: scheduler-build watcher-build ## Build project
+build: scheduler-build watcher-build  admission-build ## Build project
 	black ./
 
-clean: scheduler-clean watcher-clean ## Clean project
+clean: scheduler-clean watcher-clean admission-clean ## Clean project
 	-@kubectl delete --force --grace-period=0 -f test.yaml
+
+logs: ## Dump all logs
+	kubectl logs -l app=naas --all-containers

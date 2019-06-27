@@ -1,26 +1,31 @@
 # PoC demonstration of Network-as-a-Service concept
 
-## Part 2 - Designing a Network API
+## Part 3 - Authentication and Admission control
 
-At this stage there are three microservices involved:
+Every incoming request has to go through several stages before it can get accepted and persisted by the API server.
 
-* **Watcher** - listens to incoming API events and generates an interface data model based on them
-* **Scheduler** - receives API requests with the list of devices to be configured and schedules the job runners to push it
-* **Enforcer** - one or many job runners created by scheduler, combining the models and templates and using the result to replace the running configuration of the devices.
+1. All users will authenticate with Google and get mapped to individual namespace/tenant based on their google alias.
+2. Mutating webhook will be used to inject default values into each request and allow users to define ranges as well as individual ports.
+3. Object schema validation will do the syntactic validation of each request.
+4. Validating webhook will perform the semantic validation to make sure users cannot change ports assigned to a different tenant.
 
-![](./img/naas-p2.png)
+![](./img/admission-controller-phases.png)
 
-### 1. Build the test topology
+
+#### 0. Prepare for OIDC authentication
+
+For this demo, I'll only use a single non-admin user. Before you run the rest of the steps, you need to make sure you've followed [dexter][dexter] to setup google credentials and update OAuth client and user IDs in `kind.yaml`, `dexter-auth.sh` and `oidc/manifest.yaml` files.
+
+#### 1. Build the test topology 
 
 This step assumes you have [docker-topo][docker-topo] installed and c(vEOS) image [built][cveos] and available in local docker registry.
 
 ```
 make topo
 ```
+This test topology can be any Arista EOS device reachable from the localhost. If using a different test topology, be sure to update the [inventory][inventory] file.
 
-This test topology can be any Arista EOS device reachable from the localhost. If using a different test topology, be sure to update the [inventory](topo/inventory.yaml) file.
-
-### 2. Build the local Kubernetes cluster
+#### 2. Build the Kubernetes cluster
 
 The following step will build a docker-based [kind][kind] cluster with a single control plane and a single worker node.
 
@@ -28,9 +33,9 @@ The following step will build a docker-based [kind][kind] cluster with a single 
 make kubernetes
 ```
 
-### 3. Check that the cluster is functional
+#### 3. Check that the cluster is functional
 
-The following step will build a 100MB docker image and push it to dockerhub. It is assumed that the user has done `docker login` and has his username saved in `DOCKERHUB_USER` environment variable. 
+The following step will build a base docker image and push it to dockerhub. It is assumed that the user has done `docker login` and has his username saved in the `DOCKERHUB_USER` environment variable.
 
 ```
 export KUBECONFIG="$(kind get kubeconfig-path --name="naas")"
@@ -38,91 +43,84 @@ make warmup
 kubectl get pod test
 ```
 
-This image will be used by all other services, so it may take a few minutes for test pod to transition from `ContainerCreating` to `Running`
+This is a 100MB image, so it may take a few minutes for test pod to transition from `ContainerCreating` to `Running`
 
-### 4. Deploy the scheduler/enforcer services
+#### 4. Build the watcher service
 
-The next command will perform the following steps:
-
-1. Upload scheduler and enforcer scripts as configmaps
-2. Create Traefik daemonset to be used as ingress
-3. Upload generic device model along with its template and label them accordingly
-4. Create scheduler deployment, service and ingress resources
-
-```
-make scheduler-build
-```
-
-If running as non-root, the user may be prompted for a sudo password.
-
-
-### 5. Deploy the watcher service
+This step will create all the necessary custom resource definitions and services.
 
 ```
 make watcher-build
 ```
 
-The above command will perform the following steps:
-1. Create two namespaces that will represent different platform tenants
-2. Create `Interface` and `Device` CRD objects describing our custom API
-3. Deploy interface-watcher and device-watcher controllers along with the necessary RBAC rules
-4. Upload interface jinja template to be used by the enforcers
+#### 5. Build admission webhooks
 
-### 5. Test the app
-
-Issue the first `Interface` API call:
-
-```bash
-kubectl apply -f crds/03_cr.yaml         
-```
-
-Check the logs of the interface-watcher controller to make sure it has picked up the `Interface` API ADDED event:
+This step will install and configure both mutating and validating admission webhooks
 
 ```
-kubectl logs deploy/interface-watcher
-2019-06-20 08:20:01 INFO interface-watcher - interface_watcher: Watching Interface CRDs
-2019-06-20 08:20:09 INFO interface-watcher - process_services: Received ADDED event request-001 of Interface kind
-2019-06-20 08:20:09 INFO interface-watcher - process_service: Processing ADDED config for Vlans 10 on device devicea
-2019-06-20 08:20:09 INFO interface-watcher - get_device: Reading the devicea device resource
+make admission-build
 ```
 
-Check the logs of the device-watcher controller to make sure it has detected the `Device` API event:
+#### 6. Authenticate with Google 
+
+Assuming all files from step 0 have been updated correctly, the following command will open a web browser and prompt you to select a google account to authenticate with.
 
 ```
-kubectl logs deploy/device-watcher
-2019-06-20 08:20:09 INFO device-watcher - update_configmaps: Updating ConfigMap for devicea
-2019-06-20 08:20:09 INFO device-watcher - update_configmaps: Creating configmap for devicea
-2019-06-20 08:20:09 INFO device-watcher - update_configmaps: Configmap devicea doesn't exist yet. Creating
+make oidc-build
 ```
 
-Check the logs of the scheduler service to see if it has been notified about the change:
+From now on, you should be able to switch to your google-authenticated user like this:
 
 ```
-kubectl logs deploy/scheduler
-2019-06-20 08:20:09 INFO scheduler - webhook: Got incoming request from 10.32.0.4
-2019-06-20 08:20:09 INFO scheduler - webhook: Request JSON payload {'devices': ['devicea', 'deviceb']}
-2019-06-20 08:20:09 INFO scheduler - create_job: Creating job job-6rlwg0
+kubectl config use-context mk
 ```
 
-Check the logs of the enforcer service to see if device configs have been generated and pushed:
+And back to the admin user like this:
 
 ```
-kubectl logs jobs/job-6rlwg0
-2019-06-20 08:20:18 INFO enforcer - push_configs: Downloading Model configmaps
-2019-06-20 08:20:18 INFO enforcer - get_configmaps: Retrieving the list of ConfigMaps matching labels {'app': 'naas', 'type': 'model'}
-2019-06-20 08:20:18 INFO enforcer - push_configs: Found models: ['devicea', 'deviceb', 'generic-cm']
-2019-06-20 08:20:18 INFO enforcer - push_configs: Downloading Template configmaps
-2019-06-20 08:20:18 INFO enforcer - get_configmaps: Retrieving the list of ConfigMaps matching labels {'app': 'naas', 'type': 'template'}
+kubectl config use-context kubernetes-admin@naas
 ```
 
-Finally, we can check the result on the device itself:
+#### 7. Test 
+
+To demonstrate how everything works, I'm going to issue three API requests. The [first][cr-first] API request will set up a large range of ports on test switches. 
 
 ```
-devicea#sh run int eth1
-interface Ethernet1
+kubectl config use-context mk
+kubectl apply -f crds/03_cr.yaml                 
+```
+
+The [second][cr-second] API request will try to re-assign some of these ports to a different tenant and will get denied by the validation controller.
+
+```
+kubectl config use-context kubernetes-admin@naas
+kubectl apply -f crds/04_cr.yaml        
+Error from server (Port 11@deviceA is owned by a different tenant: tenant-a (request request-001), Port 12@deviceA is owned by a different tenant: tenant-a (request request-001),
+```
+
+The [third][cr-third] API request will update some of the ports from the original request within the same tenant.
+
+```
+kubectl config use-context mk
+kubectl apply -f crds/05_cr.yaml                 
+```
+
+The following result can be observed on one of the switches:
+
+```
+devicea#sh run int eth2-3
+interface Ethernet2
+   description request-002
+   shutdown
+   switchport trunk allowed vlan 100
+   switchport mode trunk
+   spanning-tree portfast
+interface Ethernet3
    description request-001
+   shutdown
    switchport trunk allowed vlan 10
    switchport mode trunk
+   spanning-tree portfast
 ```
 
 ### Cleanup
@@ -134,3 +132,7 @@ make clean
 [docker-topo]: https://github.com/networkop/docker-topo
 [cveos]: https://github.com/networkop/docker-topo/tree/master/topo-extra-files/veos
 [kind]: https://github.com/kubernetes-sigs/kind
+[cr-first]: crds/03_cr.yaml       
+[cr-second]: crds/04_cr.yaml
+[cr-third]: crds/05_cr.yaml 
+[inventory]: topo/inventory.yaml

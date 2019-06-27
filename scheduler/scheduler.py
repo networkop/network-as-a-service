@@ -27,14 +27,13 @@ def get_current_namespace():
 
 
 def get_configmap(name):
-   log.info(f"Reading the configmap {name}")
-   k8s_api = client.CoreV1Api()
-   try:
-       return k8s_api.read_namespaced_config_map(name, get_current_namespace())
-   except ApiException as e:
-       log.info(f"Caught ApiException when reading configmaps/{name}: {e}")
-       return None
-
+    log.info(f"Reading the configmap {name}")
+    k8s_api = client.CoreV1Api()
+    try:
+        return k8s_api.read_namespaced_config_map(name, get_current_namespace())
+    except ApiException as e:
+        log.info(f"Caught ApiException when reading configmaps/{name}: {e}")
+        return None
 
 
 def generate_random_suffix():

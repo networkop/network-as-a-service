@@ -1,0 +1,26 @@
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: naas-role-tenant-a
+  namespace: tenant-a
+rules:
+- apiGroups:
+  - network.as.a.service
+  resources:
+  - interfaces
+  verbs: ["*"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: naas-rolebinding-tenant-a
+  namespace: tenant-a
+subjects:
+- kind: User
+  name: my.gmail.user.account@gmail.com
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: naas-role-tenant-a

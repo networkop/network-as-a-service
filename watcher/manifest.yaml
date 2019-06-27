@@ -46,23 +46,24 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
-    app: interface-watcher
+    app: naas
   name: interface-watcher
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: interface-watcher
+      type: interface-watcher
   template:
     metadata:
       labels:
-        app: interface-watcher
+        app: naas
+        type: interface-watcher
     spec:
       serviceAccountName: naas-watcher
       containers:
       - image: networkop/naas
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: interface-watcher
         command: ["/app/interface-watcher.py"]
         volumeMounts:
@@ -82,23 +83,24 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
-    app: device-watcher
+    app: naas
   name: device-watcher
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: device-watcher
+      type: device-watcher
   template:
     metadata:
       labels:
-        app: device-watcher
+        app: naas
+        type: device-watcher
     spec:
       serviceAccountName: naas-watcher
       containers:
       - image: networkop/naas
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: device-watcher
         command: ["/app/device-watcher.py"]
         volumeMounts:

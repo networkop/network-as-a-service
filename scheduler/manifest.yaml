@@ -61,7 +61,7 @@ metadata:
   namespace: default
 spec:
   selector:
-    app: scheduler
+    type: scheduler
   ports:
   - name: http
     protocol: TCP
@@ -73,6 +73,8 @@ kind: Ingress
 metadata:
   name: scheduler-api
   namespace: default
+  labels:
+    app: naas
 spec:
   rules:
   - host: api.naas
@@ -87,24 +89,26 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
-    app: scheduler
+    app: naas
   namespace: default
   name: scheduler
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: scheduler
+      type: scheduler
   template:
     metadata:
       labels:
-        app: scheduler
+        type: scheduler
+        app: naas
       name: scheduler
     spec:
       serviceAccountName: scheduler
       containers:
         - name: scheduler
           image: networkop/naas
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
           command: [/app/scheduler.py]

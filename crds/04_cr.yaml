@@ -1,18 +1,17 @@
 apiVersion: network.as.a.service/v1
 kind: Interface
 metadata:
-  name: request-001
-  namespace: tenant-a
+  name: request-002
+  namespace: tenant-b
 spec:
   services:
     - devicename: deviceA
-      ports: ["1-15", "16"]
-      vlan: 10
+      ports: [11-13,15,16]
+      vlan: 1010
       trunk: yes
     - devicename: deviceB
-      ports: ["1-10", "11"]
-      vlan: 110
-      trunk: no
+      ports: [1,11,12]
+      vlan: 33
   
   
 

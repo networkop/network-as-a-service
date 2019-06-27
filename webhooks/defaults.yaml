@@ -1,0 +1,6 @@
+---
+Interface:
+  trunk: False
+  stp: "portfast"
+  shutdown: True
+Prefix: "Ethernet"

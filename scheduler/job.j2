@@ -1,6 +1,8 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
+  labels:
+    app: naas
   name: {{ job.name }}
 spec:
   template:

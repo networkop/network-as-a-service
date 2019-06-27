@@ -1,7 +1,7 @@
 !
 hostname sw-2
 !
-ip host api.naas 172.17.0.2
+ip host api.naas 172.17.0.3
 !
 spanning-tree mode mstp
 !

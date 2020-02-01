@@ -1,3 +1,5 @@
+[![Docker Pulls](https://img.shields.io/docker/pulls/networkop/naas.svg)](https://img.shields.io/docker/pulls/networkop/naas)
+
 # PoC demonstration of Network-as-a-Service concept
 
 This is a complete end-to-end demo of Network-as-a-Service platform and encompasses all the below demos from other branches.
